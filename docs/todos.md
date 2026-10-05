@@ -44,15 +44,15 @@ Goal: a running FastAPI service with a migrated Supabase schema.
   - [x] `chat_threads`
   - [x] `chat_messages`
   - [x] `message_citations`
-- [x] Alembic init + first migration (prepared and validated offline; not applied):
+- [x] Alembic init + first migration (applied to Supabase):
   - [x] `create extension if not exists vector`
   - [x] `vector(1536)` embedding column
   - [x] generated `tsvector` column on chunks
   - [x] HNSW index (vector) + GIN index (full-text)
   - [x] RLS policies (users see only their own chats)
-- [ ] `uv run alembic upgrade head` against Supabase direct/session connection (awaiting approval)
-- [ ] Verify applied schema and RLS with two authenticated users (including cross-user access and ownership-change attempts)
-- [ ] `app/database/supabase.py` — user-scoped and service-role clients
+- [x] `uv run alembic upgrade head` against Supabase direct/session connection
+- [x] Verify applied schema and RLS with two authenticated users (including cross-user access and ownership-change attempts)
+- [x] `app/database/supabase.py` — user-scoped and service-role clients
 - [x] Verify: `uv run uvicorn app.main:app --reload` → health check returns 200
 
 ---
@@ -63,18 +63,18 @@ Goal: analysts can sign in with email; backend rejects unauthenticated requests.
 
 **Backend**
 
-- [ ] `app/auth/dependencies.py` — verify `Authorization: Bearer <supabase_jwt>`, expose `get_current_user`
-- [ ] Reject missing/expired tokens with `401` before any chat or retrieval work
+- [x] `app/auth/dependencies.py` — verify `Authorization: Bearer <supabase_jwt>`, expose `get_current_user`
+- [x] Reject missing/expired tokens with `401` before any chat or retrieval work
 
 **Frontend**
 
-- [ ] Scaffold Vite + React + TypeScript + Tailwind + shadcn ([frontend-setup](guides/frontend-setup.md))
-- [ ] `src/lib/env.ts` — validate `VITE_API_BASE_URL`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
-- [ ] `src/lib/supabase.ts` — browser Supabase client
-- [ ] `src/lib/http.ts` + `src/lib/api.ts` — fetch wrapper with automatic bearer token
-- [ ] Sign-in / sign-up pages (email only, no SSO)
-- [ ] Protected routes — redirect unauthenticated users to login
-- [ ] Verify: sign up, sign in, token reaches backend on a test authenticated endpoint
+- [x] Scaffold Vite + React + TypeScript + Tailwind + shadcn ([frontend-setup](guides/frontend-setup.md))
+- [x] `src/lib/env.ts` — validate `VITE_API_BASE_URL`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
+- [x] `src/lib/supabase.ts` — browser Supabase client
+- [x] `src/lib/http.ts` + `src/lib/api.ts` — fetch wrapper with automatic bearer token
+- [x] Sign-in / sign-up pages (email only, no SSO)
+- [x] Protected routes — redirect unauthenticated users to login
+- [x] Verify: sign up, sign in, token reaches backend on a test authenticated endpoint
 
 ---
 
