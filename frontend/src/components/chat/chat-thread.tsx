@@ -1,7 +1,6 @@
 import { useMemo, useState, type FormEvent } from 'react'
 import { useChat } from '@ai-sdk/react'
 import { DefaultChatTransport, type UIMessage } from 'ai'
-
 import { AlertCircle } from 'lucide-react'
 
 import { ChatComposer } from '@/components/chat/chat-composer'
@@ -51,7 +50,7 @@ export function ChatThread({
     ? 'Your session may have expired. Sign in again to continue.'
     : isNetworkError
       ? 'Could not reach the API. Check that the backend is running and the frontend API URL is correct.'
-      : 'The filing search or grounded answer could not be completed. Please try again.'
+      : 'The filing search or grounded answer could not be completed. Try again.'
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -62,27 +61,42 @@ export function ChatThread({
     void sendMessage({ text })
   }
 
+  function ask(text: string) {
+    if (!text || isStreaming) return
+    setInput('')
+    void sendMessage({ text })
+  }
+
   return (
-    <div className="flex h-full min-h-[65svh] flex-col md:min-h-0">
-      <header className="border-b px-5 py-4 md:px-8">
-        <h1 className="truncate font-semibold">{title}</h1>
-        <p className="mt-0.5 text-xs text-muted-foreground">SEC filing research · sourced answers</p>
+    <div className="flex h-full min-h-0 flex-col">
+      <header className="border-b bg-card/80 px-4 py-3 backdrop-blur-sm sm:px-8">
+        <h1 className="truncate text-sm font-semibold sm:text-base">{title}</h1>
+        <p className="mt-0.5 text-xs text-muted-foreground">Sourced from the SEC filing corpus</p>
       </header>
-      <MessageList messages={messages} status={status} />
-      <div className="border-t bg-background px-4 py-4 md:px-8">
+      <MessageList messages={messages} onAsk={ask} status={status} />
+      <div className="border-t bg-card/90 px-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-8 sm:pt-4">
         {error && (
-          <div className="mx-auto mb-3 flex max-w-3xl items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm" role="alert">
+          <div
+            className="mx-auto mb-3 flex max-w-3xl items-start gap-2 rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm"
+            role="alert"
+          >
             <AlertCircle className="mt-0.5 size-4 shrink-0 text-destructive" />
             <div className="min-w-0 flex-1">
               <p>{errorMessage}</p>
               {isAuthError ? (
-                <a className="mt-1 inline-block font-medium underline underline-offset-4" href="/login">Sign in again</a>
+                <a className="mt-1 inline-block font-medium underline underline-offset-4" href="/login">
+                  Sign in again
+                </a>
               ) : (
-                <p className="mt-1 text-xs text-muted-foreground">The current answer was not verified; don’t rely on it.</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  The current answer was not verified. Do not rely on it.
+                </p>
               )}
             </div>
             {!isAuthError && (
-              <Button onClick={() => void regenerate()} size="sm" variant="outline">Try again</Button>
+              <Button onClick={() => void regenerate()} size="sm" variant="outline">
+                Try again
+              </Button>
             )}
           </div>
         )}

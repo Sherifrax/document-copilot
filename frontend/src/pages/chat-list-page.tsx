@@ -9,24 +9,23 @@ export function ChatListPage() {
     useOutletContext<ChatLayoutContext>()
 
   return (
-    <div className="grid h-full min-h-[65svh] place-items-center px-6 py-16 md:min-h-0">
-      <div className="max-w-md text-center">
-        <span className="mx-auto grid size-12 place-items-center rounded-2xl bg-muted">
-          <MessageSquareText className="size-5" />
-        </span>
-        <h1 className="mt-5 text-2xl font-semibold tracking-tight">
-          {threads.length === 0 ? 'Start your first conversation' : 'Choose a conversation'}
-        </h1>
-        <p className="mt-2 text-sm leading-6 text-muted-foreground">
+    <div className="grid h-full place-items-center px-5 py-12 sm:px-8">
+      <div className="max-w-lg">
+        <p className="font-serif text-3xl leading-tight tracking-tight sm:text-4xl">
+          {threads.length === 0 ? 'Start with a filing question' : 'Open a conversation'}
+        </p>
+        <p className="mt-3 max-w-[42ch] text-sm leading-6 text-muted-foreground">
           {threads.length === 0
-            ? 'Create a thread to ask questions about the filing corpus.'
-            : 'Open a previous conversation from the sidebar, or start a new one.'}
+            ? 'Ask in plain English. Answers cite the company, filing, year, and page so you can check the source.'
+            : 'Pick a thread from the sidebar, or start a new one for a different line of inquiry.'}
         </p>
         <Button
-          className="mt-6"
+          className="mt-7"
           disabled={isLoadingThreads || isCreatingThread}
           onClick={() => void createThread()}
+          size="lg"
         >
+          <MessageSquareText data-icon="inline-start" />
           {isCreatingThread ? 'Creating…' : 'New conversation'}
         </Button>
       </div>

@@ -12,7 +12,7 @@ export function AuthField({ label, ...props }: AuthFieldProps) {
       <input
         {...props}
         required
-        className="h-10 w-full rounded-lg border bg-background px-3 text-sm outline-none transition focus:border-ring focus:ring-3 focus:ring-ring/20"
+        className="h-11 w-full rounded-md border bg-card px-3 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/20"
       />
     </label>
   )

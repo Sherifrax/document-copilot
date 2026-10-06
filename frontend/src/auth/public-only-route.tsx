@@ -6,7 +6,11 @@ export function PublicOnlyRoute() {
   const { user, isLoading } = useAuth()
 
   if (isLoading) {
-    return <main className="grid min-h-svh place-items-center">Loading…</main>
+    return (
+      <main className="grid min-h-svh place-items-center bg-background text-sm text-muted-foreground">
+        Opening Document Copilot…
+      </main>
+    )
   }
   return user ? <Navigate to="/" replace /> : <Outlet />
 }

@@ -1,8 +1,10 @@
-import { LogOut, MessageSquare, Plus } from 'lucide-react'
+import { LogOut, Plus, X } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
 
+import { BrandMark } from '@/components/brand-mark'
 import { Button } from '@/components/ui/button'
 import type { ChatThread } from '@/lib/chat'
+import { cn } from '@/lib/utils'
 
 const dateFormatter = new Intl.DateTimeFormat(undefined, {
   month: 'short',
@@ -16,6 +18,9 @@ type ThreadSidebarProps = {
   isCreating: boolean
   onCreate: () => void
   onSignOut: () => void
+  onNavigate?: () => void
+  onClose?: () => void
+  className?: string
 }
 
 export function ThreadSidebar({
@@ -25,55 +30,77 @@ export function ThreadSidebar({
   isCreating,
   onCreate,
   onSignOut,
+  onNavigate,
+  onClose,
+  className,
 }: ThreadSidebarProps) {
   return (
-    <aside className="flex max-h-[35svh] min-h-0 flex-col border-b bg-card md:max-h-none md:border-r md:border-b-0">
-      <div className="flex items-center justify-between gap-3 border-b px-4 py-3 md:block md:space-y-4 md:px-5 md:py-5">
-        <NavLink className="flex items-center gap-2 font-semibold tracking-tight" to="/chat">
-          <span className="grid size-8 place-items-center rounded-lg bg-primary text-primary-foreground">
-            <MessageSquare className="size-4" />
-          </span>
-          Document Copilot
-        </NavLink>
-        <div className="flex items-center gap-1 md:block">
-          <Button className="md:w-full" disabled={isCreating || isLoading} onClick={onCreate}>
-            <Plus data-icon="inline-start" />
-            {isCreating ? 'Creating…' : 'New conversation'}
-          </Button>
-          <Button
-            aria-label="Sign out"
-            className="md:hidden"
-            size="icon"
-            title="Sign out"
-            variant="ghost"
-            onClick={onSignOut}
+    <aside className={cn('flex h-full min-h-0 flex-col bg-ink text-primary-foreground', className)}>
+      <div className="border-b border-white/10 px-4 py-4 sm:px-5">
+        <div className="flex items-start justify-between gap-2">
+          <NavLink
+            className="flex min-w-0 items-center gap-2.5 font-semibold tracking-tight"
+            onClick={onNavigate}
+            to="/chat"
           >
-            <LogOut />
-          </Button>
+            <BrandMark inverted />
+            <span className="min-w-0">
+              <span className="block truncate">Document Copilot</span>
+              <span className="block text-xs font-normal text-primary-foreground/65">
+                Driftwood Capital
+              </span>
+            </span>
+          </NavLink>
+          {onClose && (
+            <Button
+              aria-label="Close conversations"
+              className="shrink-0 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"
+              onClick={onClose}
+              size="icon"
+              variant="ghost"
+            >
+              <X />
+            </Button>
+          )}
         </div>
+        <Button
+          className="mt-4 w-full bg-primary-foreground/10 text-primary-foreground hover:bg-primary-foreground/16"
+          disabled={isCreating || isLoading}
+          onClick={onCreate}
+        >
+          <Plus data-icon="inline-start" />
+          {isCreating ? 'Creating…' : 'New conversation'}
+        </Button>
       </div>
 
-      <nav className="min-h-0 flex-1 overflow-x-auto overflow-y-hidden p-2 md:overflow-y-auto" aria-label="Conversations">
+      <nav
+        aria-label="Conversations"
+        className="min-h-0 flex-1 overflow-y-auto px-2 py-3"
+      >
         {isLoading ? (
-          <p className="px-3 py-4 text-sm text-muted-foreground">Loading conversations…</p>
+          <p className="px-3 py-3 text-sm text-primary-foreground/65">Loading conversations…</p>
         ) : threads.length === 0 ? (
-          <p className="px-3 py-4 text-sm leading-6 text-muted-foreground">
-            Your conversations will appear here.
+          <p className="px-3 py-3 text-sm leading-6 text-primary-foreground/65">
+            Conversations you start will collect here.
           </p>
         ) : (
-          <ul className="flex gap-1 md:block md:space-y-1">
+          <ul className="space-y-0.5">
             {threads.map((thread) => (
-              <li className="min-w-56 md:min-w-0" key={thread.id}>
+              <li key={thread.id}>
                 <NavLink
                   className={({ isActive }) =>
-                    `block rounded-lg px-3 py-2.5 text-sm transition-colors ${
-                      isActive ? 'bg-accent text-accent-foreground' : 'hover:bg-accent/60'
-                    }`
+                    cn(
+                      'block rounded-md px-3 py-2.5 text-sm transition-colors',
+                      isActive
+                        ? 'bg-primary-foreground/12'
+                        : 'hover:bg-primary-foreground/8',
+                    )
                   }
+                  onClick={onNavigate}
                   to={`/chat/${thread.id}`}
                 >
                   <span className="block truncate font-medium">{thread.title}</span>
-                  <span className="mt-0.5 block text-xs text-muted-foreground">
+                  <span className="mt-0.5 block text-xs text-primary-foreground/60">
                     {dateFormatter.format(new Date(thread.updated_at))}
                   </span>
                 </NavLink>
@@ -83,14 +110,17 @@ export function ThreadSidebar({
         )}
       </nav>
 
-      <div className="hidden border-t p-3 md:block">
-        {error && <p className="mb-2 px-2 text-xs text-destructive">{error}</p>}
-        <Button className="w-full justify-start" variant="ghost" onClick={onSignOut}>
+      <div className="border-t border-white/10 p-3">
+        {error && <p className="mb-2 px-2 text-xs text-red-200">{error}</p>}
+        <Button
+          className="w-full justify-start text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"
+          variant="ghost"
+          onClick={onSignOut}
+        >
           <LogOut data-icon="inline-start" />
           Sign out
         </Button>
       </div>
-      {error && <p className="px-4 pb-3 text-xs text-destructive md:hidden">{error}</p>}
     </aside>
   )
 }

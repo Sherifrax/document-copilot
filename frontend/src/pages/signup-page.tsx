@@ -31,10 +31,16 @@ export function SignupPage() {
   }
 
   return (
-    <AuthLayout title="Create your account" description="Use your email to get started.">
+    <AuthLayout
+      title="Create an account"
+      description="Analysts sign in with email. Confirm the message we send before you start."
+    >
       {confirmationSent ? (
-        <div className="space-y-4 text-sm">
-          <p>Check your inbox and confirm your email before signing in.</p>
+        <div className="space-y-4 text-sm leading-6">
+          <p>
+            Check your inbox and confirm your email. After that, you can sign in and ask the
+            filings.
+          </p>
           <Button asChild variant="outline" className="w-full" size="lg">
             <Link to="/login">Back to sign in</Link>
           </Button>
@@ -57,7 +63,7 @@ export function SignupPage() {
       {!confirmationSent && (
         <p className="mt-6 text-sm text-muted-foreground">
           Already have an account?{' '}
-          <Link className="font-medium text-foreground underline" to="/login">
+          <Link className="font-medium text-foreground underline underline-offset-4" to="/login">
             Sign in
           </Link>
         </p>

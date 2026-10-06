@@ -7,7 +7,11 @@ export function ProtectedRoute() {
   const location = useLocation()
 
   if (isLoading) {
-    return <main className="grid min-h-svh place-items-center">Loading…</main>
+    return (
+      <main className="grid min-h-svh place-items-center bg-background text-sm text-muted-foreground">
+        Opening Document Copilot…
+      </main>
+    )
   }
   if (!user) {
     return <Navigate to="/login" replace state={{ from: location }} />

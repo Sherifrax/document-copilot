@@ -1,5 +1,5 @@
 import type { FormEvent, KeyboardEvent } from 'react'
-import { Send } from 'lucide-react'
+import { ArrowUp } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
@@ -27,23 +27,23 @@ export function ChatComposer({
   return (
     <form className="mx-auto flex max-w-3xl items-end gap-2" onSubmit={onSubmit}>
       <Textarea
-        aria-label="Message"
-        className="max-h-40 min-h-11 resize-none py-2.5"
+        aria-label="Question"
+        className="max-h-40 min-h-12 resize-none py-3"
         disabled={isStreaming}
         onChange={(event) => onInputChange(event.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder="Ask about the filing corpus…"
+        placeholder="Ask about a company, filing, or year"
         rows={1}
         value={input}
       />
       <Button
-        aria-label="Send message"
-        className="size-11"
+        aria-label="Send question"
+        className="size-12 shrink-0"
         disabled={isStreaming || input.trim() === ''}
         size="icon-lg"
         type="submit"
       >
-        <Send />
+        <ArrowUp />
       </Button>
     </form>
   )

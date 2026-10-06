@@ -50,9 +50,9 @@ export function ChatThreadPage() {
 
   if (currentState?.error) {
     return (
-      <div className="grid h-full min-h-[65svh] place-items-center px-6 text-center md:min-h-0">
-        <div>
-          <h1 className="text-xl font-semibold">Conversation unavailable</h1>
+      <div className="grid h-full place-items-center px-6">
+        <div className="max-w-md">
+          <h1 className="font-serif text-2xl">Conversation unavailable</h1>
           <p className="mt-2 text-sm text-destructive">{currentState.error}</p>
           <Button asChild className="mt-5" variant="outline">
             <Link to="/chat">Back to conversations</Link>
@@ -64,7 +64,7 @@ export function ChatThreadPage() {
 
   if (currentState?.messages == null) {
     return (
-      <div className="grid h-full min-h-[65svh] place-items-center text-sm text-muted-foreground md:min-h-0">
+      <div className="grid h-full place-items-center text-sm text-muted-foreground">
         Loading conversation…
       </div>
     )

@@ -49,7 +49,49 @@ You also need accounts/keys for external services once the app is wired up. Star
 
 ## Running locally
 
-To be added during the build. Setup guides:
+Create the two environment files from the checked-in examples, then fill in the
+values from Supabase and OpenAI:
+
+```bash
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env
+```
+
+Start the backend in one terminal:
+
+```bash
+cd backend
+uv sync
+uv run alembic upgrade head
+uv run uvicorn app.main:app --reload
+```
+
+Start the frontend in another terminal:
+
+```bash
+cd frontend
+pnpm install
+pnpm dev
+```
+
+Required backend variables are listed in [backend/.env.example](backend/.env.example):
+Supabase URL/keys, a direct or session Postgres `DATABASE_URL`, OpenAI key and
+models, and `ALLOWED_ORIGINS`. Required browser-safe variables are listed in
+[frontend/.env.example](frontend/.env.example): `VITE_API_BASE_URL`,
+`VITE_SUPABASE_URL`, and `VITE_SUPABASE_ANON_KEY`. Never put the service-role
+key or database URL in the frontend file.
+
+Check the API before opening the SPA:
+
+```bash
+curl http://localhost:8000/health
+```
+
+Expected response: `{"status":"ok"}`. Backend logs include a request ID,
+duration, and chat-turn outcome; do not log prompts, answers, bearer tokens, or
+filing contents.
+
+Setup guides:
 
 - [Supabase](docs/guides/supabase-setup.md) — account, hosted project (dashboard or CLI)
 - [Backend](docs/guides/backend-setup.md)
@@ -66,3 +108,39 @@ uv run data/download.py
 
 By default this downloads the latest 5 10-K filings for AAPL, MSFT, NVDA, AMZN, and GOOGL into year folders under `data/downloads/` and writes a `manifest.json`.
 Downloaded files are gitignored; the `data/` folder itself stays in git for the script and notes.
+
+## Updating and ingesting the corpus
+
+The committed `data/markdown/manifest.json` is the current 25-filing pilot
+corpus (Apple, Amazon, Alphabet, Microsoft, and NVIDIA; fiscal years 2021–2025).
+To refresh it from SEC EDGAR, update the contact in `data/download.py`, then run:
+
+```bash
+uv run data/download.py
+uv run --project backend data/convert_to_markdown.py
+cd backend
+uv run python -m ingest.source_documents
+uv run python -m ingest.chunks plan
+uv run python -m ingest.chunks pilot       # optional paid sanity check
+uv run python -m ingest.chunks run --confirm
+```
+
+`source_documents` is idempotent by SEC accession number. `chunks plan` makes
+no API calls or writes; the full chunk run only inserts missing chunks and
+requires the explicit `--confirm` switch.
+
+## Pilot verification
+
+Run the ten client-brief retrieval probes in isolation after ingestion:
+
+```bash
+cd backend
+uv run python scripts/evaluate_retrieval.py
+```
+
+For each probe, record whether the returned passages cover the requested
+company/year scope, have a page number or section, and support the claim. Then
+manually ask the exact questions in [docs/client-brief.md](docs/client-brief.md)
+through the browser and verify every answer has clickable citations and an
+underlying passage. The pilot acceptance sheet and persistence/latency checks
+are in [docs/pilot-readiness.md](docs/pilot-readiness.md).

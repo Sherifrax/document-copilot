@@ -36,7 +36,7 @@ export function LoginPage() {
   }
 
   return (
-    <AuthLayout title="Welcome back" description="Sign in to continue to Document Copilot.">
+    <AuthLayout title="Sign in" description="Use your Driftwood email to open the filing desk.">
       <form className="space-y-4" onSubmit={handleSubmit}>
         <AuthField label="Email" name="email" type="email" autoComplete="email" />
         <AuthField
@@ -51,8 +51,8 @@ export function LoginPage() {
         </Button>
       </form>
       <p className="mt-6 text-sm text-muted-foreground">
-        New to Document Copilot?{' '}
-        <Link className="font-medium text-foreground underline" to="/signup">
+        New here?{' '}
+        <Link className="font-medium text-foreground underline underline-offset-4" to="/signup">
           Create an account
         </Link>
       </p>

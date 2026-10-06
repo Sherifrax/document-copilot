@@ -1,7 +1,9 @@
 """Run one document-agent turn and return only validated output."""
 
+from time import perf_counter
 from uuid import UUID
 
+import structlog
 from pydantic_ai import Agent
 from pydantic_ai.messages import (
     ModelMessage,
@@ -80,10 +82,14 @@ class ChatOrchestrator:
         thread_id: UUID,
         messages: list[UIMessage],
     ) -> ValidatedGroundedAnswer:
+        started = perf_counter()
+        logger = structlog.get_logger(__name__).bind(
+            user_id=str(user_id), thread_id=str(thread_id)
+        )
         current_message = messages[-1]
         current_question = user_message_content(current_message)
         if lacks_company_scope(current_question, messages[:-1]):
-            return self._grounding_validator.validate(
+            result = self._grounding_validator.validate(
                 GroundedAnswer(
                     answer=(
                         "There is not enough evidence to answer until you specify "
@@ -93,15 +99,23 @@ class ChatOrchestrator:
                 ),
                 EvidenceRegistry(),
             )
+            logger.info("chat_turn_completed", duration_ms=round((perf_counter() - started) * 1000, 1), citations=0, insufficient_evidence=True)
+            return result
         deps = DocumentAgentDeps(
             user_id=user_id,
             thread_id=thread_id,
             retriever=self._retriever,
         )
-        result = await self._agent.run(
-            current_question,
-            message_history=model_message_history(messages[:-1]),
-            deps=deps,
-            usage_limits=DOCUMENT_AGENT_USAGE_LIMITS,
-        )
-        return self._grounding_validator.validate(result.output, deps.evidence)
+        try:
+            result = await self._agent.run(
+                current_question,
+                message_history=model_message_history(messages[:-1]),
+                deps=deps,
+                usage_limits=DOCUMENT_AGENT_USAGE_LIMITS,
+            )
+            validated = self._grounding_validator.validate(result.output, deps.evidence)
+        except Exception:
+            logger.exception("chat_turn_failed", duration_ms=round((perf_counter() - started) * 1000, 1))
+            raise
+        logger.info("chat_turn_completed", duration_ms=round((perf_counter() - started) * 1000, 1), citations=len(validated.citations), insufficient_evidence=validated.insufficient_evidence)
+        return validated

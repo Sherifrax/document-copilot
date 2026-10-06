@@ -5,6 +5,7 @@ import json
 from collections.abc import AsyncIterator, Awaitable, Callable
 from uuid import UUID
 
+import structlog
 from httpx import HTTPError
 from postgrest.exceptions import APIError
 
@@ -81,6 +82,7 @@ async def stream_grounded_reply(
     try:
         result = await generate_answer()
     except Exception:  # noqa: BLE001 - the SSE boundary must terminate every failed run
+        structlog.get_logger(__name__).exception("stream_generation_failed")
         yield server_sent_event(
             {"type": "error", "errorText": "Unable to generate a grounded response"}
         )
@@ -121,6 +123,7 @@ async def stream_grounded_reply(
     try:
         await persist_turn(result)
     except (APIError, HTTPError):
+        structlog.get_logger(__name__).exception("stream_persistence_failed")
         yield server_sent_event(
             {"type": "error", "errorText": "Unable to save the completed response"}
         )
