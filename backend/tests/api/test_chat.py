@@ -6,14 +6,25 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.api import chat
+from app.assistant.outputs import ValidatedGroundedAnswer
 from app.auth.dependencies import CurrentUser, get_current_user
-from app.chat.streaming import STUB_REPLY
 from app.main import app
 
 USER_ID = UUID("11111111-1111-1111-1111-111111111111")
 OTHER_USER_ID = UUID("22222222-2222-2222-2222-222222222222")
 THREAD_ID = UUID("33333333-3333-3333-3333-333333333333")
 NOW = datetime(2026, 1, 2, 3, 4, 5, tzinfo=UTC)
+TEST_REPLY = "The corpus does not contain enough evidence."
+
+
+class FakeOrchestrator:
+    async def answer(self, **kwargs: object) -> ValidatedGroundedAnswer:
+        return ValidatedGroundedAnswer(
+            answer=TEST_REPLY,
+            citations=(),
+            cited_passages=(),
+            insufficient_evidence=True,
+        )
 
 
 @pytest.fixture
@@ -26,6 +37,7 @@ def client() -> TestClient:
         )
 
     app.dependency_overrides[get_current_user] = authenticated_user
+    app.dependency_overrides[chat.get_chat_orchestrator] = FakeOrchestrator
     with TestClient(app) as test_client:
         yield test_client
     app.dependency_overrides.clear()
@@ -206,7 +218,7 @@ def test_streams_and_persists_completed_turn(
         for event in events
         if isinstance(event, dict) and event["type"] == "text-delta"
     ]
-    assert "".join(deltas) == STUB_REPLY
+    assert "".join(deltas) == TEST_REPLY
     assert events[-3:] == [{"type": "finish-step"}, {"type": "finish"}, "[DONE]"]
 
     args = persisted["args"]
@@ -215,7 +227,8 @@ def test_streams_and_persists_completed_turn(
     assert args[3] == "What changed?"
     assert isinstance(args[5], UUID)
     assert args[2] != args[5]
-    assert args[6] == STUB_REPLY
+    assert args[6] == TEST_REPLY
+    assert args[8] == []
     assert events[0]["messageId"] == str(args[5])
 
 

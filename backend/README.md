@@ -74,3 +74,58 @@ review its output and add policy/extension changes explicitly.
 
 `uv run alembic downgrade base` deletes all application tables and their data.
 It leaves the potentially shared `vector` extension and Supabase Auth intact.
+
+## Corpus ingestion
+
+After generating the Markdown corpus, load new filings into `source_documents`:
+
+```bash
+uv run ingest/source_documents.py
+```
+
+The loader reads `data/markdown/manifest.json` and skips accession numbers that
+are already present, so it is safe to run again.
+
+Preview the Docling hybrid chunks and embedding token count without API calls or
+database writes:
+
+```bash
+uv run ingest/chunks.py plan
+```
+
+Embed and insert the single Apple revenue pilot chunk:
+
+```bash
+uv run ingest/chunks.py pilot
+```
+
+After verifying the pilot, explicitly confirm the full paid run:
+
+```bash
+uv run ingest/chunks.py run --confirm
+```
+
+The full command skips chunks whose stored content hash matches, allowing an
+interrupted run to resume without repeating successful embedding calls.
+
+## Retrieval evaluation
+
+The fast retrieval suite mocks OpenAI and Postgres and does not use network
+credentials:
+
+```bash
+uv run pytest tests/retrieval -m "not integration"
+```
+
+To run the Apple revenue-mix spot check against the ingested Supabase corpus:
+
+```bash
+RUN_RETRIEVAL_INTEGRATION=1 uv run --env-file .env pytest tests/retrieval/test_integration.py -s
+```
+
+To print the top five passages for each client-brief topic without writing to
+the database:
+
+```bash
+uv run python scripts/evaluate_retrieval.py
+```

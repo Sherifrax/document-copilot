@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Annotated
 from uuid import UUID, uuid4
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import StreamingResponse
 from httpx import HTTPError
 from postgrest.exceptions import APIError
@@ -18,7 +18,8 @@ from app.chat.messages import (
     stored_message_to_ui_message,
     user_message_content,
 )
-from app.chat.streaming import STUB_REPLY, stream_stubbed_reply
+from app.chat.orchestrator import ChatOrchestrator
+from app.chat.streaming import stream_grounded_reply
 from app.database.chats import (
     append_chat_turn,
     create_thread,
@@ -28,6 +29,10 @@ from app.database.chats import (
 )
 
 router = APIRouter(prefix="/chat", tags=["chat"])
+
+
+def get_chat_orchestrator(request: Request) -> ChatOrchestrator:
+    return request.app.state.chat_orchestrator
 
 
 class ThreadResponse(BaseModel):
@@ -114,6 +119,7 @@ async def get_messages(
 async def post_chat_stream(
     request: ChatStreamRequest,
     user: Annotated[CurrentUser, Depends(get_current_user)],
+    orchestrator: Annotated[ChatOrchestrator, Depends(get_chat_orchestrator)],
 ) -> StreamingResponse:
     await require_thread_owner(request.id, user.id)
 
@@ -122,9 +128,36 @@ async def post_chat_stream(
     user_parts = [part.model_dump() for part in user_message.parts]
     user_message_id = uuid4()
     assistant_message_id = uuid4()
-    assistant_parts = [TextPart(type="text", text=STUB_REPLY).model_dump()]
 
-    async def persist_turn() -> None:
+    async def generate_answer():
+        return await orchestrator.answer(
+            user_id=user.id,
+            thread_id=request.id,
+            messages=request.messages,
+        )
+
+    async def persist_turn(result) -> None:
+        assistant_parts = [TextPart(type="text", text=result.answer).model_dump()]
+        for citation, passage in zip(
+            result.citations, result.cited_passages, strict=True
+        ):
+            assistant_parts.append(
+                {
+                    "type": "data-citation",
+                    "data": {
+                        "index": citation.index,
+                        "chunkId": str(citation.chunk_id),
+                        "ticker": passage.ticker,
+                        "companyName": passage.company_name,
+                        "filingType": passage.filing_type,
+                        "fiscalYear": passage.fiscal_year,
+                        "pageNumber": passage.page_number,
+                        "section": passage.section,
+                        "sourceUrl": passage.source_url,
+                        "excerpt": citation.excerpt,
+                    },
+                }
+            )
         await append_chat_turn(
             user.access_token,
             request.id,
@@ -132,12 +165,21 @@ async def post_chat_stream(
             user_content,
             user_parts,
             assistant_message_id,
-            STUB_REPLY,
+            result.answer,
             assistant_parts,
+            [
+                {
+                    "id": str(uuid4()),
+                    "chunk_id": str(citation.chunk_id),
+                    "citation_index": citation.index,
+                    "excerpt": citation.excerpt,
+                }
+                for citation in result.citations
+            ],
         )
 
     return StreamingResponse(
-        stream_stubbed_reply(assistant_message_id, persist_turn),
+        stream_grounded_reply(assistant_message_id, generate_answer, persist_turn),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",

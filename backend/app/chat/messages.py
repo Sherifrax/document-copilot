@@ -1,6 +1,6 @@
 """AI SDK UI message models and conversion helpers."""
 
-from typing import Any, Literal, Self
+from typing import Annotated, Any, Literal, Self
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -11,10 +11,31 @@ class TextPart(BaseModel):
     text: str
 
 
+class CitationData(BaseModel):
+    index: int
+    chunk_id: UUID = Field(alias="chunkId")
+    ticker: str
+    company_name: str = Field(alias="companyName")
+    filing_type: str = Field(alias="filingType")
+    fiscal_year: int = Field(alias="fiscalYear")
+    page_number: int | None = Field(alias="pageNumber")
+    section: str | None
+    source_url: str = Field(alias="sourceUrl")
+    excerpt: str
+
+
+class CitationPart(BaseModel):
+    type: Literal["data-citation"]
+    data: CitationData
+
+
+MessagePart = Annotated[TextPart | CitationPart, Field(discriminator="type")]
+
+
 class UIMessage(BaseModel):
     id: str
     role: Literal["system", "user", "assistant"]
-    parts: list[TextPart]
+    parts: list[MessagePart]
     metadata: Any | None = None
 
 
@@ -37,7 +58,11 @@ class ChatStreamRequest(BaseModel):
 
 
 def user_message_content(message: UIMessage) -> str:
-    return "\n".join(part.text.strip() for part in message.parts if part.text.strip())
+    return "\n".join(
+        part.text.strip()
+        for part in message.parts
+        if isinstance(part, TextPart) and part.text.strip()
+    )
 
 
 def stored_message_to_ui_message(row: dict[str, Any]) -> UIMessage:

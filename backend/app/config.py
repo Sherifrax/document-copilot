@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     supabase_service_role_key: str
     database_url: str
     openai_api_key: str
+    openai_chat_model: str
     openai_embedding_model: str = "text-embedding-3-small"
     openai_embedding_dimensions: int = Field(default=1536, gt=0)
     allowed_origins: Annotated[list[str], NoDecode]

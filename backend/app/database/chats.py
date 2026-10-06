@@ -1,7 +1,7 @@
 """Supabase persistence operations for chat threads and messages."""
 
 from typing import Any
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from app.database.supabase import create_service_role_client, create_user_client
 
@@ -26,7 +26,13 @@ async def create_thread(access_token: str, user_id: UUID, title: str) -> dict[st
     try:
         response = await (
             client.table("chat_threads")
-            .insert({"user_id": str(user_id), "title": title})
+            .insert(
+                {
+                    "id": str(uuid4()),
+                    "user_id": str(user_id),
+                    "title": title,
+                }
+            )
             .execute()
         )
         return response.data[0]
@@ -77,7 +83,8 @@ async def append_chat_turn(
     user_parts: list[dict[str, str]],
     assistant_message_id: UUID,
     assistant_content: str,
-    assistant_parts: list[dict[str, str]],
+    assistant_parts: list[dict[str, Any]],
+    citations: list[dict[str, Any]],
 ) -> None:
     client = await create_user_client(access_token)
     try:
@@ -91,6 +98,7 @@ async def append_chat_turn(
                 "p_user_parts": user_parts,
                 "p_assistant_content": assistant_content,
                 "p_assistant_parts": assistant_parts,
+                "p_citations": citations,
             },
         ).execute()
     finally:

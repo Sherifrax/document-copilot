@@ -12,7 +12,7 @@ dependencies = [
     "pydantic==2.13.5",
     "pydantic-ai==2.51.0",
     "pydantic-settings==2.15.0",
-    "sqlalchemy==2.1.1",
+    "sqlalchemy[asyncio]==2.1.1",
     "structlog==26.1.0",
     "supabase==2.31.0",
     "uvicorn==0.54.0",
@@ -21,6 +21,11 @@ dependencies = [
 [tool.uv]
 add-bounds = "exact"
 exclude-newer = "7 days"
+
+[tool.pytest.ini_options]
+markers = [
+    "integration: tests that require live OpenAI and Supabase credentials",
+]
 
 [build-system]
 requires = ["hatchling"]
@@ -31,7 +36,9 @@ packages = ["app"]
 
 [dependency-groups]
 dev = [
+    "docling==2.130.0",
     "ipykernel==7.3.0",
     "pytest==9.1.1",
     "ruff==0.16.9",
+    "tiktoken==0.14.0",
 ]
